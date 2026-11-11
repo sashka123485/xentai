@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#080000">
+<title>СИСТЕМА ЗАБЛОКИРОВАНА</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;min-height:100%;background:#050000;color:#eee;font-family:Consolas,monospace}
+body{overflow:hidden;background:radial-gradient(ellipse at center,#310000 0%,#100000 48%,#020000 100%)}
+body:before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.18;background:repeating-linear-gradient(0deg,transparent 0 3px,#ff0000 4px,transparent 5px);mix-blend-mode:screen}
+.wrap{min-height:100svh;display:flex;align-items:center;justify-content:center;padding:24px;text-align:center;position:relative}
+.panel{width:min(92vw,560px);padding:30px 22px;border:1px solid #8c0000;background:rgba(8,0,0,.88);box-shadow:0 0 35px #9d000055,inset 0 0 28px #6b000022;position:relative}
+.warning{color:#ff2525;font-size:12px;letter-spacing:4px;margin-bottom:18px;animation:flicker 2s infinite}
+h1{font-size:clamp(24px,6vw,40px);color:#ff2424;text-shadow:0 0 12px #f00,0 0 28px #900;letter-spacing:2px;margin:0 0 14px}
+.glitch{animation:shake 5s infinite}
+p{line-height:1.6;color:#d7baba}
+.status{font-size:12px;color:#ff6868;margin:18px 0}
+input{width:100%;padding:15px;background:#100000;border:1px solid #a00000;color:#fff;text-align:center;font-size:18px;outline:none}
+input:focus{box-shadow:0 0 15px #f00000}
+button{padding:14px 20px;margin-top:12px;width:100%;border:1px solid #ff3333;background:linear-gradient(#8d0000,#350000);color:white;font-weight:bold;letter-spacing:2px;cursor:pointer}
+button:hover{background:#b00000}
+.small{font-size:11px;color:#8f7777;margin-top:16px}
+#unlocked{display:none}
+@keyframes flicker{0%,18%,22%,60%,64%,100%{opacity:1}20%,62%{opacity:.25}}
+@keyframes shake{0%,96%,100%{transform:translateX(0)}97%{transform:translateX(-2px)}98%{transform:translateX(2px)}}
+</style>
+</head>
+<body>
+<main class="wrap" id="lock">
+  <section class="panel">
+    <div class="warning">● КРИТИЧЕСКОЕ СОСТОЯНИЕ ●</div>
+    <h1 class="glitch">ДОСТУП ЗАКРЫТ</h1>
+    <p>Система заблокирована.<br>Для завершения розыгрыша введи кодовое слово.</p>
+    <div class="status" id="status">ОЖИДАНИЕ КОДА...</div>
+    <input id="code" type="password" placeholder="КОДОВОЕ СЛОВО" autocomplete="off" spellcheck="false">
+    <button id="go">ПОДТВЕРДИТЬ</button>
+    <div class="small">Это локальный розыгрыш. Страница не блокирует браузер или устройство.</div>
+  </section>
+</main>
+<main class="wrap" id="unlocked">
+  <section class="panel">
+    <div class="warning">ДОСТУП ВОССТАНОВЛЕН</div>
+    <h1>ТЫ СВОБОДЕН</h1>
+    <p>Это был пранк 😈<br>Никакие данные не отправлялись.</p>
+    <button id="close">ЗАКРЫТЬ ЭКРАН</button>
+  </section>
+</main>
+<audio id="scream" src="vash-syn-smotrit-p0rn0(1).mp3" preload="auto"></audio>
+<script>
+const SECRET = "киса";
+const code = document.getElementById("code");
+const scream = document.getElementById("scream");
+const status = document.getElementById("status");
+let audioStarted = false;
+let isUnlocked = false;
+
+async function playSound(){
+  try {
+    scream.currentTime = 0;
+    scream.volume = 1; // Максимальная громкость самого аудиоплеера.
+    await scream.play();
+    audioStarted = true;
+  } catch(e) {
+    status.textContent = "ЗВУК ОЖИДАЕТ РАЗРЕШЕНИЯ БРАУЗЕРА";
+  }
+}
+async function enterFullscreen(){
+  try {
+    if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+  } catch(e) {
+    status.textContent = "ПОЛНОЭКРАННЫЙ РЕЖИМ НЕДОСТУПЕН — ПРОДОЛЖАЕМ";
+  }
+}
+function unlock(){
+  isUnlocked = true;
+  document.getElementById("lock").style.display = "none";
+  document.getElementById("unlocked").style.display = "flex";
+  if (document.fullscreenElement && document.exitFullscreen) {
+    document.exitFullscreen().catch(()=>{});
+  }
+  scream.pause();
+}
+async function check(){
+  if(code.value.trim().toLocaleLowerCase("ru-RU") === SECRET){
+    unlock();
+  } else {
+    code.value = "";
+    status.textContent = "ОШИБКА. ДОСТУП НЕ ПОДТВЕРЖДЁН.";
+    await playSound();
+    code.focus();
+  }
+}
+document.getElementById("go").addEventListener("click", check);
+code.addEventListener("keydown", e => { if(e.key === "Enter") check(); });
+document.getElementById("close").addEventListener("click", unlock);
+document.getElementById("go").addEventListener("click", enterFullscreen);
+// Браузеры обычно запрещают автозапуск со звуком до первого действия пользователя.
+ // Поэтому запускаем звук при первом касании/клике/нажатии клавиши без отдельной кнопки.
+const startOnFirstGesture = () => {
+  if (!isUnlocked) {
+    enterFullscreen();
+    if (!audioStarted) playSound();
+  }
+  window.removeEventListener("pointerdown", startOnFirstGesture);
+  window.removeEventListener("keydown", startOnFirstGesture);
+  window.removeEventListener("touchstart", startOnFirstGesture);
+};
+window.addEventListener("pointerdown", startOnFirstGesture, { once: true });
+window.addEventListener("keydown", startOnFirstGesture, { once: true });
+window.addEventListener("touchstart", startOnFirstGesture, { once: true });
+
+// Пока розыгрыш заблокирован, браузер может показать стандартное
+// подтверждение при попытке закрыть вкладку или обновить страницу.
+window.addEventListener("beforeunload", (event) => {
+  if (!isUnlocked) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
+code.focus();
+</script>
+</body>
+</html>
